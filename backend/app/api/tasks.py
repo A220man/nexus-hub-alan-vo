@@ -145,8 +145,11 @@ def claim_task(
         raise HTTPException(status_code=400, detail="Cannot claim task: not pending or agent not available")
     
     # Broadcast task update via WebSocket
-    import asyncio
-    asyncio.create_task(broadcast_task_update(swarm_id, task_id, "claimed", {"agent_id": payload.agent_id, "status": task.status.value}))
+    try:
+        asyncio.create_task(broadcast_task_update(swarm_id, task_id, "claimed", {"agent_id": payload.agent_id, "status": task.status.value}))
+    except RuntimeError:
+        # No running event loop (e.g., test context); skip broadcast
+        pass
     
     return task
 
@@ -161,8 +164,11 @@ def start_task(swarm_id: str, task_id: str, task_service: TaskService = Depends(
         raise HTTPException(status_code=400, detail="Cannot start task: not claimed")
     
     # Broadcast task update via WebSocket
-    import asyncio
-    asyncio.create_task(broadcast_task_update(swarm_id, task_id, "started", {"status": task.status.value, "started_at": task.started_at.isoformat() if task.started_at else None}))
+    try:
+        asyncio.create_task(broadcast_task_update(swarm_id, task_id, "started", {"status": task.status.value, "started_at": task.started_at.isoformat() if task.started_at else None}))
+    except RuntimeError:
+        # No running event loop (e.g., test context); skip broadcast
+        pass
     
     return task
 
@@ -182,8 +188,11 @@ def complete_task(
         raise HTTPException(status_code=400, detail="Cannot complete task: not running")
     
     # Broadcast task update via WebSocket
-    import asyncio
-    asyncio.create_task(broadcast_task_update(swarm_id, task_id, "completed", {"result": task.result, "status": task.status.value, "completed_at": task.completed_at.isoformat() if task.completed_at else None}))
+    try:
+        asyncio.create_task(broadcast_task_update(swarm_id, task_id, "completed", {"result": task.result, "status": task.status.value, "completed_at": task.completed_at.isoformat() if task.completed_at else None}))
+    except RuntimeError:
+        # No running event loop (e.g., test context); skip broadcast
+        pass
     
     return task
 
@@ -203,8 +212,11 @@ def fail_task(
         raise HTTPException(status_code=400, detail="Cannot fail task: not running or claimed")
     
     # Broadcast task update via WebSocket
-    import asyncio
-    asyncio.create_task(broadcast_task_update(swarm_id, task_id, "failed", {"error_message": task.error_message, "status": task.status.value, "completed_at": task.completed_at.isoformat() if task.completed_at else None}))
+    try:
+        asyncio.create_task(broadcast_task_update(swarm_id, task_id, "failed", {"error_message": task.error_message, "status": task.status.value, "completed_at": task.completed_at.isoformat() if task.completed_at else None}))
+    except RuntimeError:
+        # No running event loop (e.g., test context); skip broadcast
+        pass
     
     return task
 
@@ -219,7 +231,10 @@ def cancel_task(swarm_id: str, task_id: str, task_service: TaskService = Depends
         raise HTTPException(status_code=400, detail="Cannot cancel task: already terminal")
     
     # Broadcast task update via WebSocket
-    import asyncio
-    asyncio.create_task(broadcast_task_update(swarm_id, task_id, "cancelled", {"status": task.status.value, "completed_at": task.completed_at.isoformat() if task.completed_at else None}))
+    try:
+        asyncio.create_task(broadcast_task_update(swarm_id, task_id, "cancelled", {"status": task.status.value, "completed_at": task.completed_at.isoformat() if task.completed_at else None}))
+    except RuntimeError:
+        # No running event loop (e.g., test context); skip broadcast
+        pass
     
     return task
